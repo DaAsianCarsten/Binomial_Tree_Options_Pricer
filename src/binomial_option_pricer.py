@@ -33,12 +33,13 @@ class binomial_option_pricer:
             raise ValueError(f"No-Arbitrage Rule violated: {'R <= d' if self.R <= self.d else 'R >= u'}")
 
         # Data to be calculated
-        self.tree = np.zeros((self.N+1, self.N+1))
+        self.option_price_tree = np.zeros((self.N+1, self.N+1))
+        self.stock_price_tree = np.zeros((self.N+1, self.N+1))
         self.V0 = 0
         # For American options to show which nodes show be exercised early
         self.marked_nodes = np.zeros((self.N+1, self.N+1))
 
-        self.generate_tree()
+        self.generate_trees()
 
         # Store parameters in dicts
         self.input_parameters = {"Time-span": self.T, 
@@ -50,7 +51,7 @@ class binomial_option_pricer:
                                  "Option Type": ("European" if self.european else "American")+ (" Call" if self.call else " Put")}
 
         self.calculated_parameters = {"Time-step": self.dt,
-                                      "Discount Factor": self.R,
+                                      "Risk-Free growth Factor": self.R,
                                       "Up-move Factor": self.u,
                                       "Down-move Factor": self.d,
                                       "Risk-Neutral Probability": self.q,
@@ -73,7 +74,7 @@ class binomial_option_pricer:
         ===============================
         Calculated Parameters:
         Time-step dt = {self.dt} 
-        Continuous Risk-Free Rate R = {self.R} 
+        Continuous Risk-Free Growth Factor R = {self.R} 
         Up-Move Gain u = {self.u} 
         Down-Move Loss d = {self.d}
         Risk-Neutral Probability q = {self.q}
@@ -84,10 +85,11 @@ class binomial_option_pricer:
         return self.input_parameters, self.calculated_parameters
         
 
-    def generate_tree(self):
+    def generate_trees(self):
         g = call_payoff if self.call else put_payoff
         V = g(self.K, np.array([self.S * self.u**j * self.d**(self.N-j) for j in range(self.N+1)]))
-        self.tree[self.N] = V
+        self.option_price_tree[self.N] = V
+        self.stock_price_tree[self.N] = np.array([self.S * self.u**j * self.d**(self.N-j) for j in range(self.N+1)])
 
         for i in range(self.N-1,-1,-1):
             V[:i+1] = 1/self.R * (self.q * V[1:i+2] + (1-self.q) * V[:i+1])
@@ -98,9 +100,10 @@ class binomial_option_pricer:
                 self.marked_nodes[i,np.where(b_array)[0]] = 1
             V[i+1:] = 0
 
-            self.tree[i] = V
+            self.option_price_tree[i] = V
+            self.stock_price_tree[i,:i+1] = np.array([self.S * self.u**j * self.d**(i-j) for j in range(i+1)])
 
-        self.V0 = self.tree[0][0]
+        self.V0 = self.option_price_tree[0][0]
 
 
 
