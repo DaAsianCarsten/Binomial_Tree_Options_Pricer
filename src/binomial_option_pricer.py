@@ -22,23 +22,39 @@ class binomial_option_pricer:
 
 
     def __post_init__(self):
-        # Extra Parameters for calculation
+        # Verify input parameters are safe to input
+        self.verify_input_parameters()
+
+        # Calculate the other parameters
+
+        # Time step
         self.dt = self.T/self.N 
+
+        # Risk-free growth factor
         self.R = np.exp(self.r*self.dt)
+
+        # Up-move and down-move factor
         self.u = np.exp(self.sigma*np.sqrt(self.dt)) 
         self.d = 1/self.u
+
+        # Risk-neutral probability
         self.q = (self.R - self.d) / (self.u - self.d)
 
+        # Check no-arbitrage rule
         if self.R <= self.d or self.R >= self.u:
             raise ValueError(f"No-Arbitrage Rule violated: {'R <= d' if self.R <= self.d else 'R >= u'}")
 
-        # Data to be calculated
+        # Initalized trees to be calculated
         self.option_price_tree = np.zeros((self.N+1, self.N+1))
         self.stock_price_tree = np.zeros((self.N+1, self.N+1))
+
+        # Initialize our ending price
         self.V0 = 0
+
         # For American options to show which nodes show be exercised early
         self.marked_nodes = np.zeros((self.N+1, self.N+1))
 
+        # Generate the trees
         self.generate_trees()
 
         # Store parameters in dicts
@@ -57,6 +73,24 @@ class binomial_option_pricer:
                                       "Risk-Neutral Probability": self.q,
                                       "Fair Option Price": self.V0}
 
+    def verify_input_parameters(self):
+        # All values should be finite
+        if not all(map(np.isfinite,[self.T,self.N,self.S,self.sigma,self.r,self.K])): raise ValueError("All values must be finite")
+
+        # T > 0
+        if (self.T <= 0): raise ValueError("Time span T mist be positive")
+
+        # N > 0 and integer
+        if (self.N <= 0 or self.N != int(self.N)): raise ValueError("# of time steps N must be a positive integer")
+
+        # S > 0 
+        if (self.S <= 0): raise ValueError("Spot price S must be positive")
+
+        # K > 0
+        if (self.K <= 0): raise ValueError("Strike price K must be positive")
+
+        # sigma > 0
+        if (self.sigma <= 0): raise ValueError("Annualized Volatility sigma must be positive")
 
 
     def get_parameters(self):
