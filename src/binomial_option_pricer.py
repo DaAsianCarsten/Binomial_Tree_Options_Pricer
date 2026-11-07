@@ -10,7 +10,7 @@ def put_payoff(K,S):
 
 @dataclass
 class binomial_option_pricer:
-    T: int=1
+    T: float=1.0
     # Number of Steps
     N: int=10
     S: float=100.0
@@ -81,7 +81,7 @@ class binomial_option_pricer:
         if (self.T <= 0): raise ValueError("Time span T mist be positive")
 
         # N > 0 and integer
-        if (self.N <= 0 or self.N != int(self.N)): raise ValueError("# of time steps N must be a positive integer")
+        if isinstance(self.N, (bool, np.bool_)) or not isinstance(self.N, (int, np.integer)): raise ValueError("# of time steps N must be a positive integer")
 
         # S > 0 
         if (self.S <= 0): raise ValueError("Spot price S must be positive")

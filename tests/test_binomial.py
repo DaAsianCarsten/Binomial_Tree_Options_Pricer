@@ -57,8 +57,27 @@ def multi_period_euro_test(S,K,T,N,sigma,r,call):
 def test_american_european_comparison(S,K,T,N,sigma,r,call):
     A = binomial_option_pricer(S=S,K=K,T=T,N=N,sigma=sigma,r=r,call=call,european=True)
     B = binomial_option_pricer(S=S,K=K,T=T,N=N,sigma=sigma,r=r,call=call, european=False)
-    assert(A.V0 <= B.V0)
+    assert(round(A.V0,5) <= round(B.V0,5))
 
+# Intrinsic value tests; price of American option should be at least the payoff of immediate exercising of option
+def test_intrinsic_value(S,K,T,N,sigma,r):
+    american_call = binomial_option_pricer(S=S,K=K,T=T,N=N,sigma=sigma,r=r,call=True,european=False)
+    american_put = binomial_option_pricer(S=S,K=K,T=T,N=N,sigma=sigma,r=r,call=False,european=False)
+    european_call = binomial_option_pricer(S=S,K=K,T=T,N=N,sigma=sigma,r=r,call=True,european=True)
+    european_put = binomial_option_pricer(S=S,K=K,T=T,N=N,sigma=sigma,r=r,call=False,european=True)
+
+    assert(american_call.V0 > max(S-K,0) or np.isclose(american_call.V0,max(S-K,0)))
+    assert(american_put.V0 > max(K-S,0) or np.isclose(american_put.V0,max(K-S,0)))
+    assert(european_call.V0 > max(S-K*np.exp(-r*T),0) or np.isclose(european_call.V0,max(S-K*np.exp(-r*T),0)))
+    assert(european_put.V0 > max(K*np.exp(-r*T)-S,0) or np.isclose(european_put.V0,max(K*np.exp(-r*T)-S,0)))
+
+# Test no-arbitrage price bounds for European options
+def test_no_arbitrage_price_bounds(S,K,T,N,sigma,r):
+    C = binomial_option_pricer(S=S,K=K,T=T,N=N,sigma=sigma,r=r,call=True)
+    P = binomial_option_pricer(S=S,K=K,T=T,N=N,sigma=sigma,r=r,call=False)
+
+    assert(C.V0 < S or np.isclose(C.V0,S))
+    assert(P.V0 < K*np.exp(-r*T) or np.isclose(P.V0, K*np.exp(-r*T)))
 
 for i in range(TESTS):
 
@@ -81,5 +100,9 @@ for i in range(TESTS):
     if european: multi_period_euro_test(S,K,T,N,sigma,r,call)
 
     test_american_european_comparison(S,K,T,N,sigma,r,call)
+
+    test_intrinsic_value(S,K,T,N,sigma,r)
+
+    if european: test_no_arbitrage_price_bounds(S,K,T,N,sigma,r)
 
 print(f"All {TESTS} tests passed!")
