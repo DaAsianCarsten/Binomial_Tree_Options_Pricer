@@ -33,7 +33,7 @@ def test_no_arbitrage(S,K,T,N,sigma,r,call):
     test_rule_followed = True
     try:
         A = binomial_option_pricer(S=S,K=K,T=T,N=N,sigma=sigma,r=r)
-    except:
+    except ValueError:
         test_rule_followed = False
 
     assert(rule_followed == test_rule_followed)
@@ -60,7 +60,7 @@ def test_american_european_comparison(S,K,T,N,sigma,r,call):
     assert(round(A.V0,5) <= round(B.V0,5))
 
 # Intrinsic value tests; price of American option should be at least the payoff of immediate exercising of option
-def test_intrinsic_value(S,K,T,N,sigma,r):
+def test_price_lowerbounds(S,K,T,N,sigma,r):
     american_call = binomial_option_pricer(S=S,K=K,T=T,N=N,sigma=sigma,r=r,call=True,european=False)
     american_put = binomial_option_pricer(S=S,K=K,T=T,N=N,sigma=sigma,r=r,call=False,european=False)
     european_call = binomial_option_pricer(S=S,K=K,T=T,N=N,sigma=sigma,r=r,call=True,european=True)
@@ -101,7 +101,7 @@ for i in range(TESTS):
 
     test_american_european_comparison(S,K,T,N,sigma,r,call)
 
-    test_intrinsic_value(S,K,T,N,sigma,r)
+    test_price_lowerbounds(S,K,T,N,sigma,r)
 
     if european: test_no_arbitrage_price_bounds(S,K,T,N,sigma,r)
 

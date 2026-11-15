@@ -1,7 +1,9 @@
 import numpy as np 
 from scipy.stats import norm
 
-def black_scholes_european_price(S,K,r,T,sigma,call=True):
+def black_scholes_price(S,K,r,T,sigma,call=True,european=True):
+    if (not european and not call): raise TypeError("This model does not apply to American-style put options.")
+
     d1 = (np.log(S/K) + (r+sigma**2/2)*T) / (sigma*np.sqrt(T))
     d2 = d1 - sigma*np.sqrt(T)
 
