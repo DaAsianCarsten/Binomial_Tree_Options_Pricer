@@ -1,6 +1,7 @@
 import numpy as np 
 import matplotlib.pyplot as plt 
 from dataclasses import dataclass
+from black_scholes_pricer import black_scholes_price
 
 def call_payoff(K,S):
     return np.maximum(S-K,0.0)
@@ -10,15 +11,19 @@ def put_payoff(K,S):
 
 @dataclass
 class binomial_option_pricer:
-    T: float=1.0
+    # In years
+    T: float
     # Number of Steps
-    N: int=10
-    S: float=100.0
-    sigma: float=0.5
-    r: float=0.02
+    N: int
+    S: float
+    sigma: float
+    r: float
+    K: float
     call: bool=True
     european: bool=True
-    K: float=100
+    q_d: float=0.0
+    # Are we testing functions in the class?
+    test: bool=False
 
 
     def __post_init__(self):
@@ -38,7 +43,7 @@ class binomial_option_pricer:
         self.d = 1/self.u
 
         # Risk-neutral probability
-        self.q = (self.R - self.d) / (self.u - self.d)
+        self.q = (np.exp((self.r - self.q_d) * self.dt) - self.d) / (self.u - self.d)
 
         # Check no-arbitrage rule
         if self.R <= self.d or self.R >= self.u:
@@ -49,7 +54,7 @@ class binomial_option_pricer:
         self.stock_price_tree = np.zeros((self.N+1, self.N+1))
 
         # Initialize our ending price
-        self.V0 = 0
+        self.V0 = None
 
         # For American options to show which nodes show be exercised early
         self.marked_nodes = np.zeros((self.N+1, self.N+1))
@@ -57,21 +62,36 @@ class binomial_option_pricer:
         # Generate the trees
         self.generate_trees()
 
+        # Initialize and calculate Greeks
+        self.delta = None
+        self.gamma = None
+        self.theta = None
+        self.vega = None
+        self.rho = None
+
+        self.calculate_greeks()
+
         # Store parameters in dicts
-        self.input_parameters = {"Time-span": self.T, 
+        self.input_parameters = {"Time-span (yrs)": self.T, 
                                  "Time periods": self.N, 
                                  "Spot Price": self.S, 
                                  "Annualuzed Volatility": self.sigma, 
                                  "Continuous Risk-Free Rate": self.r,
                                  "Strike Price": self.K,
-                                 "Option Type": ("European" if self.european else "American")+ (" Call" if self.call else " Put")}
+                                 "Option Type": ("European" if self.european else "American") + (" Call" if self.call else " Put"),
+                                 "Dividend Yield": self.q_d}
 
-        self.calculated_parameters = {"Time-step": self.dt,
-                                      "Risk-Free growth Factor": self.R,
-                                      "Up-move Factor": self.u,
-                                      "Down-move Factor": self.d,
-                                      "Risk-Neutral Probability": self.q,
-                                      "Fair Option Price": self.V0}
+        self.calculated_values = {"Time-step (yrs)": self.dt,
+                                  "Risk-Free growth Factor": self.R,
+                                  "Up-move Factor": self.u,
+                                  "Down-move Factor": self.d,
+                                  "Risk-Neutral Probability": self.q,
+                                  "Fair Option Price": self.V0,
+                                  "Delta (Δ)": self.delta,
+                                  "Gamma (Γ)": self.gamma,
+                                  "Theta (Θ)": self.theta,
+                                  "Vega (v)": self.vega,
+                                  "Rho (ρ)": self.rho}
 
     def verify_input_parameters(self):
         # All values should be finite
@@ -92,31 +112,30 @@ class binomial_option_pricer:
         # sigma > 0
         if (self.sigma <= 0): raise ValueError("Annualized Volatility sigma must be positive")
 
+        # Q_d >= 0
+        if (self.q_d < 0): raise ValueError("Dividend Yield q_d must be nonnegative")
 
-    def get_parameters(self):
-        print(
-        f"""
-        ===============================
-        Input Parameters:
-        Time-span (years) T = {self.T}
-        Time periods N = {self.N}
-        Spot Price S = {self.S}
-        Annualized Volatility sigma = {self.sigma} 
-        Continuous Risk-Free Gain r = {self.r}
-        Strike Price K = {self.K}
-        Option Type: {("European" if self.european else "American")+ (" Call" if self.call else " Put")}
-        ===============================
-        Calculated Parameters:
-        Time-step dt = {self.dt} 
-        Continuous Risk-Free Growth Factor R = {self.R} 
-        Up-Move Gain u = {self.u} 
-        Down-Move Loss d = {self.d}
-        Risk-Neutral Probability q = {self.q}
-        Fair Option Price V0 = {round(self.V0,2)}
-        ===============================
-        """)
 
-        return self.input_parameters, self.calculated_parameters
+    def get_parameters(self,print_to_terminal=False):
+
+        if print_to_terminal:
+            print(f"""======================""")
+            print(f"""Input Parameters: """)
+
+            for k,v in self.input_parameters.items():
+                print(f"{k}: {v}")
+
+            print(f"""======================""")
+
+            print(f"""Calculated Values: """)
+
+            for k,v in self.calculated_values.items():
+                print(f"{k}: {v}")
+
+            print(f"""======================""")
+        
+
+        return self.input_parameters, self.calculated_values
         
 
     def generate_trees(self):
@@ -139,7 +158,62 @@ class binomial_option_pricer:
 
         self.V0 = self.option_price_tree[0][0]
 
+    def calculate_greeks(self):
+        # Delta
+        V_u = self.option_price_tree[1,1]
+        V_d = self.option_price_tree[1,0]
+        S_u = self.stock_price_tree[1,1]
+        S_d = self.stock_price_tree[1,0]
+        self.delta = (V_u-V_d)/(S_u-S_d)
+
+        # Gamma
+        S_uu = self.stock_price_tree[2,2]
+        S_ud = self.stock_price_tree[2,1]
+        S_dd = self.stock_price_tree[2,0]
+        V_uu = self.option_price_tree[2,2]
+        V_ud = self.option_price_tree[2,1]
+        V_dd = self.option_price_tree[2,0]
+
+        S_u = self.stock_price_tree[1,1]
+        S_d = self.stock_price_tree[1,0]
+
+        Delta_u = (V_uu-V_ud)/(S_uu-S_ud)
+        Delta_d = (V_ud-V_dd)/(S_ud-S_dd)
+        self.gamma = (Delta_u-Delta_d)/(S_u-S_d)
+
+        # Theta
+        self.theta = (V_ud-self.V0)/(2*self.dt)
+
+        # For the continuous calculations
+        h = 1e-6
+        try: assert(self.european or self.call)
+        except:
+            if not self.test:
+                print("Unable to calculate Vega and Rho from continuous model due to American-Put option type.")
+            return None
+        
+        # Vega (have to use closed form solution for this)
+        V = lambda s: black_scholes_price(S=self.S,K=self.K,r=self.r,T=self.T,sigma=s,call=self.call,european=self.european)
+        self.vega = (V(self.sigma+h)-V(self.sigma-h))/(2*h)
+
+        # Rho (have to use closed form solution for this)
+        V = lambda rr: black_scholes_price(S=self.S,K=self.K,r=rr,T=self.T,sigma=self.sigma,call=self.call,european=self.european)
+        self.rho = (V(self.r+h)-V(self.r-h))/(2*h)
+
+
 
 
 if __name__ == "__main__":
-    pass
+    S = 220
+    K = 250
+    T = 1
+    N = 30
+    sigma = 0.6
+    r = 0.02
+    call = True
+    european = True
+    q_d = 0.03
+
+    A_with_dividend = binomial_option_pricer(T=T,N=N,S=S,sigma=sigma,r=r,call=call,european=european,q_d=q_d)
+
+    A_with_dividend.get_parameters(print_to_terminal=True)

@@ -7,7 +7,7 @@ import numpy as np
 from scipy.special import binom
 
 from binomial_option_pricer import binomial_option_pricer, call_payoff, put_payoff
-from black_scholes_pricer import black_scholes_european_price
+from black_scholes_pricer import black_scholes_price
 
 # Random function
 rng = np.random.default_rng()
@@ -17,8 +17,8 @@ TESTS = 1000
 
 # Testing the fact for European options, C-P = S - K*exp(-rT)
 def test_put_call_parity(S,K,T,N,sigma,r,call):
-    A = binomial_option_pricer(S=S,K=K,T=T,N=N,sigma=sigma,r=r,call=True)
-    B = binomial_option_pricer(S=S,K=K,T=T,N=N,sigma=sigma,r=r,call=False)
+    A = binomial_option_pricer(S=S,K=K,T=T,N=N,sigma=sigma,r=r,call=True,test=True)
+    B = binomial_option_pricer(S=S,K=K,T=T,N=N,sigma=sigma,r=r,call=False,test=True)
 
     assert(np.isclose(A.V0 - B.V0, S-K*np.exp(-r*T)))
 
@@ -32,7 +32,7 @@ def test_no_arbitrage(S,K,T,N,sigma,r,call):
     rule_followed = (0<q<1)
     test_rule_followed = True
     try:
-        A = binomial_option_pricer(S=S,K=K,T=T,N=N,sigma=sigma,r=r)
+        A = binomial_option_pricer(S=S,K=K,T=T,N=N,sigma=sigma,r=r,test=True)
     except ValueError:
         test_rule_followed = False
 
@@ -49,22 +49,22 @@ def multi_period_euro_test(S,K,T,N,sigma,r,call):
     if call: g = call_payoff
     else: g = put_payoff
 
-    A = binomial_option_pricer(S=S,K=K,T=T,N=N,sigma=sigma,r=r,call=call)
+    A = binomial_option_pricer(S=S,K=K,T=T,N=N,sigma=sigma,r=r,call=call,test=True)
     C0 = 1.0/R**N * np.sum([(binom(N,j) * q**j * (1-q)**(N-j) * g(K, S * u**j * d**(N-j))) for j in range(N+1)])
     assert(np.isclose(C0,A.V0))
 
 # Compare American vs European style options with exact parameters; American option should NOT be priced lower
 def test_american_european_comparison(S,K,T,N,sigma,r,call):
-    A = binomial_option_pricer(S=S,K=K,T=T,N=N,sigma=sigma,r=r,call=call,european=True)
-    B = binomial_option_pricer(S=S,K=K,T=T,N=N,sigma=sigma,r=r,call=call, european=False)
+    A = binomial_option_pricer(S=S,K=K,T=T,N=N,sigma=sigma,r=r,call=call,european=True,test=True)
+    B = binomial_option_pricer(S=S,K=K,T=T,N=N,sigma=sigma,r=r,call=call, european=False,test=True)
     assert(round(A.V0,5) <= round(B.V0,5))
 
 # Intrinsic value tests; price of American option should be at least the payoff of immediate exercising of option
 def test_price_lowerbounds(S,K,T,N,sigma,r):
-    american_call = binomial_option_pricer(S=S,K=K,T=T,N=N,sigma=sigma,r=r,call=True,european=False)
-    american_put = binomial_option_pricer(S=S,K=K,T=T,N=N,sigma=sigma,r=r,call=False,european=False)
-    european_call = binomial_option_pricer(S=S,K=K,T=T,N=N,sigma=sigma,r=r,call=True,european=True)
-    european_put = binomial_option_pricer(S=S,K=K,T=T,N=N,sigma=sigma,r=r,call=False,european=True)
+    american_call = binomial_option_pricer(S=S,K=K,T=T,N=N,sigma=sigma,r=r,call=True,european=False,test=True)
+    american_put = binomial_option_pricer(S=S,K=K,T=T,N=N,sigma=sigma,r=r,call=False,european=False,test=True)
+    european_call = binomial_option_pricer(S=S,K=K,T=T,N=N,sigma=sigma,r=r,call=True,european=True,test=True)
+    european_put = binomial_option_pricer(S=S,K=K,T=T,N=N,sigma=sigma,r=r,call=False,european=True,test=True)
 
     assert(american_call.V0 > max(S-K,0) or np.isclose(american_call.V0,max(S-K,0)))
     assert(american_put.V0 > max(K-S,0) or np.isclose(american_put.V0,max(K-S,0)))
@@ -73,8 +73,8 @@ def test_price_lowerbounds(S,K,T,N,sigma,r):
 
 # Test no-arbitrage price bounds for European options
 def test_no_arbitrage_price_bounds(S,K,T,N,sigma,r):
-    C = binomial_option_pricer(S=S,K=K,T=T,N=N,sigma=sigma,r=r,call=True)
-    P = binomial_option_pricer(S=S,K=K,T=T,N=N,sigma=sigma,r=r,call=False)
+    C = binomial_option_pricer(S=S,K=K,T=T,N=N,sigma=sigma,r=r,call=True,test=True)
+    P = binomial_option_pricer(S=S,K=K,T=T,N=N,sigma=sigma,r=r,call=False,test=True)
 
     assert(C.V0 < S or np.isclose(C.V0,S))
     assert(P.V0 < K*np.exp(-r*T) or np.isclose(P.V0, K*np.exp(-r*T)))
