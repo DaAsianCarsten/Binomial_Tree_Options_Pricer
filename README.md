@@ -91,13 +91,13 @@ Observe that
 
 $$
 \begin{aligned}
-\frac{q}{R} &< d\\
-\Leftrightarrow \frac{R-d}{Ru-Rd} &< d && (\text{Definition of } q)\\
-\Leftrightarrow R-d &< Rud-Rd^2\\
-\Leftrightarrow R-d &< R-Rd^2 && (ud=1)\\
-\Leftrightarrow -d &< -Rd^2\\
-\Leftrightarrow \frac{1}{d} &> R\\
-\Leftrightarrow R &< u && (u=1/d)\\
+&\frac{q}{R} < d\\
+\Leftrightarrow &\frac{R-d}{Ru-Rd} < d && (\text{Definition of } q)\\
+\Leftrightarrow &R-d < Rud-Rd^2\\
+\Leftrightarrow &R-d < R-Rd^2 && (ud=1)\\
+\Leftrightarrow &-d < -Rd^2\\
+\Leftrightarrow &\frac{1}{d} > R\\
+\Leftrightarrow &R < u && (u=1/d)\\
 \end{aligned}
 $$
 
