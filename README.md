@@ -90,7 +90,7 @@ $$
 Observe that
 
 $$
-\begin{align*}
+\begin{aligned}
 \frac{q}{R} &< d\\
 \Leftrightarrow \frac{R-d}{Ru-Rd} &< d && (\text{Definition of } q)\\
 \Leftrightarrow R-d &< Rud-Rd^2\\
@@ -98,7 +98,7 @@ $$
 \Leftrightarrow -d &< -Rd^2\\
 \Leftrightarrow \frac{1}{d} &> R\\
 \Leftrightarrow R &< u && (u=1/d)\\
-\end{align*}
+\end{aligned}
 $$
 
 which is true because of our no-arbitrage assumption that $d<R<u$. So, plugging in the result that $\frac{q}{R}<d$ into (2), we get that
