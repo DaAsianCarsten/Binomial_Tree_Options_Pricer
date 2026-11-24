@@ -7,7 +7,6 @@ import numpy as np
 from scipy.special import binom
 
 from binomial_option_pricer import binomial_option_pricer, call_payoff, put_payoff
-from black_scholes_pricer import black_scholes_price
 
 # Random function
 rng = np.random.default_rng()

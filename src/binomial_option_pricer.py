@@ -22,7 +22,8 @@ class binomial_option_pricer:
     call: bool=True
     european: bool=True
     q_d: float=0.0
-    # Are we testing functions in the class?
+
+    # Are we testing functions in the class? True if yes, False if no
     test: bool=False
 
 
@@ -31,7 +32,6 @@ class binomial_option_pricer:
         self.verify_input_parameters()
 
         # Calculate the other parameters
-
         # Time step
         self.dt = self.T/self.N 
 
@@ -46,21 +46,16 @@ class binomial_option_pricer:
         self.q = (np.exp((self.r - self.q_d) * self.dt) - self.d) / (self.u - self.d)
 
         # Check no-arbitrage rule
-        if self.R <= self.d or self.R >= self.u:
-            raise ValueError(f"No-Arbitrage Rule violated: {'R <= d' if self.R <= self.d else 'R >= u'}")
+        if self.q >= 1 or self.q <= 0:
+            raise ValueError(f"No-Arbitrage Rule violated: {'q <= 0' if self.q <= 0 else 'q >= 1'}")
 
-        # Initalized trees to be calculated
-        self.option_price_tree = np.zeros((self.N+1, self.N+1))
-        self.stock_price_tree = np.zeros((self.N+1, self.N+1))
 
         # Initialize our ending price
         self.V0 = None
 
-        # For American options to show which nodes show be exercised early
-        self.marked_nodes = np.zeros((self.N+1, self.N+1))
-
         # Generate the trees
-        self.generate_trees()
+        self.option_price_tree, self.stock_price_tree, self.marked_nodes = self.generate_trees(K=self.K,T=self.T,S=self.S,N=self.N,sigma=self.sigma,r=self.r,q_d=self.q_d)
+        self.V0 = self.option_price_tree[0][0]
 
         # Initialize and calculate Greeks
         self.delta = None
@@ -87,11 +82,11 @@ class binomial_option_pricer:
                                   "Down-move Factor": self.d,
                                   "Risk-Neutral Probability": self.q,
                                   "Fair Option Price": self.V0,
-                                  "Delta (Δ)": self.delta,
-                                  "Gamma (Γ)": self.gamma,
-                                  "Theta (Θ)": self.theta,
-                                  "Vega (v)": self.vega,
-                                  "Rho (ρ)": self.rho}
+                                  "Delta": self.delta,
+                                  "Gamma": self.gamma,
+                                  "Theta": self.theta,
+                                  "Vega": self.vega,
+                                  "Rho": self.rho}
 
     def verify_input_parameters(self):
         # All values should be finite
@@ -112,7 +107,7 @@ class binomial_option_pricer:
         # sigma > 0
         if (self.sigma <= 0): raise ValueError("Annualized Volatility sigma must be positive")
 
-        # Q_d >= 0
+        # q_d >= 0
         if (self.q_d < 0): raise ValueError("Dividend Yield q_d must be nonnegative")
 
 
@@ -138,27 +133,45 @@ class binomial_option_pricer:
         return self.input_parameters, self.calculated_values
         
 
-    def generate_trees(self):
+    def generate_trees(self,K,T,S,N,sigma,r,q_d=0):
         g = call_payoff if self.call else put_payoff
-        V = g(self.K, np.array([self.S * self.u**j * self.d**(self.N-j) for j in range(self.N+1)]))
-        self.option_price_tree[self.N] = V
-        self.stock_price_tree[self.N] = np.array([self.S * self.u**j * self.d**(self.N-j) for j in range(self.N+1)])
+        R = np.exp(r*T/N)
+        u = np.exp(sigma*np.sqrt(T/N))
+        d = 1/u
+        q = (np.exp((r-q_d)*T/N)-d)/(u-d)
+        if q >= 1 or q <= 0:
+            raise ValueError(f"No-Arbitrage Rule violated: {'q <= 0' if q <= 0 else 'q >= 1'}")
+        
+        V = g(K, np.array([S * u**j * d**(N-j) for j in range(N+1)]))
+        option_price_tree = np.zeros((N+1,N+1))
+        stock_price_tree = np.zeros((N+1,N+1))
+        
+        # For American options to show which nodes show be exercised early
+        marked_nodes = np.zeros((N+1,N+1))
 
-        for i in range(self.N-1,-1,-1):
-            V[:i+1] = 1/self.R * (self.q * V[1:i+2] + (1-self.q) * V[:i+1])
+        option_price_tree[N] = V
+        stock_price_tree[N] = np.array([S * u**j * d**(N-j) for j in range(N+1)])
+
+        for i in range(N-1,-1,-1):
+            V[:i+1] = 1/R * (q * V[1:i+2] + (1-q) * V[:i+1])
             if not self.european: 
-                b_array = (V[:i+1] < g(self.K, np.array([self.S * self.u**j * self.d**(i-j) for j in range(i+1)])))
-                V[:i+1] = np.maximum(V[:i+1], g(self.K, np.array([self.S * self.u**j * self.d**(i-j) for j in range(i+1)])))
+                b_array = (V[:i+1] < g(K, np.array([S * u**j * d**(i-j) for j in range(i+1)])))
+                V[:i+1] = np.maximum(V[:i+1], g(K, np.array([S * u**j * d**(i-j) for j in range(i+1)])))
 
-                self.marked_nodes[i,np.where(b_array)[0]] = 1
+                marked_nodes[i,np.where(b_array)[0]] = 1
             V[i+1:] = 0
 
-            self.option_price_tree[i] = V
-            self.stock_price_tree[i,:i+1] = np.array([self.S * self.u**j * self.d**(i-j) for j in range(i+1)])
+            option_price_tree[i] = V
+            stock_price_tree[i,:i+1] = np.array([S * u**j * d**(i-j) for j in range(i+1)])
 
-        self.V0 = self.option_price_tree[0][0]
+        return option_price_tree, stock_price_tree, marked_nodes
 
     def calculate_greeks(self):
+        try: assert(self.N >= 2)
+        except AssertionError: 
+            if not self.test: print(f"Number of time-steps N must be at least 2 to calculate greeks")
+            return None
+        
         # Delta
         V_u = self.option_price_tree[1,1]
         V_d = self.option_price_tree[1,0]
@@ -186,19 +199,16 @@ class binomial_option_pricer:
 
         # For the continuous calculations
         h = 1e-6
-        try: assert(self.european or self.call)
-        except:
-            if not self.test:
-                print("Unable to calculate Vega and Rho from continuous model due to American-Put option type.")
-            return None
         
-        # Vega (have to use closed form solution for this)
-        V = lambda s: black_scholes_price(S=self.S,K=self.K,r=self.r,T=self.T,sigma=s,call=self.call,european=self.european)
-        self.vega = (V(self.sigma+h)-V(self.sigma-h))/(2*h)
+        # Vega (Need to generate mutliple trees for this)
+        high_sigma_tree,_,_ = self.generate_trees(K=self.K,T=self.T,S=self.S,N=self.N,sigma=self.sigma+h,r=self.r,q_d=self.q_d)
+        low_sigma_tree,_,_ = self.generate_trees(K=self.K,T=self.T,S=self.S,N=self.N,sigma=self.sigma-h,r=self.r,q_d=self.q_d)
+        self.vega = (high_sigma_tree[0][0]-low_sigma_tree[0][0])/(2*h)
 
-        # Rho (have to use closed form solution for this)
-        V = lambda rr: black_scholes_price(S=self.S,K=self.K,r=rr,T=self.T,sigma=self.sigma,call=self.call,european=self.european)
-        self.rho = (V(self.r+h)-V(self.r-h))/(2*h)
+        # Rho (Need to generate mutliple trees for this)
+        high_r_tree,_,_ = self.generate_trees(K=self.K,T=self.T,S=self.S,N=self.N,sigma=self.sigma,r=self.r+h,q_d=self.q_d)
+        low_r_tree,_,_ = self.generate_trees(K=self.K,T=self.T,S=self.S,N=self.N,sigma=self.sigma,r=self.r-h,q_d=self.q_d)
+        self.rho = (high_r_tree[0][0]-low_r_tree[0][0])/(2*h)
 
 
 
@@ -214,6 +224,6 @@ if __name__ == "__main__":
     european = True
     q_d = 0.03
 
-    A_with_dividend = binomial_option_pricer(T=T,N=N,S=S,sigma=sigma,r=r,call=call,european=european,q_d=q_d)
+    A_with_dividend = binomial_option_pricer(T=T,N=N,S=S,sigma=sigma,r=r,K=K,call=call,european=european,q_d=q_d)
 
     A_with_dividend.get_parameters(print_to_terminal=True)
