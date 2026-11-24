@@ -61,7 +61,9 @@
 
 From the tree model, suppose that one node does benefit from early exercising. For American-style call options, the value of the option at this node is given by:
 
-$$V=\max\left(g(S),\frac{1}{R}\left(q\cdot g(Su)+(1-q)\cdot g(Sd)\right)\right)$$
+```math
+\(V=\max\left(g(S),\frac{1}{R}\left(q\cdot g(Su)+(1-q)\cdot g(Sd)\right)\right)\)
+```
 
 where $g(S)=\max(S-K,0)$ is the payoff of the call option at stock price $S$. Recall that $q$ (the risk-neutral probability) in this case is defined by $q:=\frac{R-d}{u-d}$. We have several cases for where the prices are positioned relative to the strike price $K$.
 
@@ -69,9 +71,9 @@ where $g(S)=\max(S-K,0)$ is the payoff of the call option at stock price $S$. Re
 
 In this case, all the payoff functions are in the money, so
 
-
-$$\frac{1}{R}\left(q\cdot g(Su)+(1-q)\cdot g(Sd)\right) = \frac{1}{R}\left(q(Su-K)+(1-q)(Sd-K)\right)=\frac{1}{R}(RS-K)=S-\frac{K}{R} \tag{1}$$
-
+```math
+\(\frac{1}{R}\left(q\cdot g(Su)+(1-q)\cdot g(Sd)\right) = \frac{1}{R}\left(q(Su-K)+(1-q)(Sd-K)\right)=\frac{1}{R}(RS-K)=S-\frac{K}{R} \tag{1}\)
+```
 
 and since $R \geq 1$, we have that $S-\frac{K}{R}\geq S-K=g(S)$. So, exercising early isn't optimal in this case.
 
@@ -79,11 +81,14 @@ and since $R \geq 1$, we have that $S-\frac{K}{R}\geq S-K=g(S)$. So, exercising 
 
 In this case, we have $g(Sd)=0$, so
 
-$$\frac{1}{R}\left(q\cdot g(Su)+(1-q)\cdot g(Sd)\right)=\frac{1}{R}\cdot q(Su-K)\tag{2}$$
+```math
+\(\frac{1}{R}\left(q\cdot g(Su)+(1-q)\cdot g(Sd)\right)=\frac{1}{R}\cdot q(Su-K)\tag{2}\)
+```
 
 Observe that
 
-$$
+```math
+\(
 \begin{align*}
 \frac{q}{R} &< d\\
 \Leftrightarrow \frac{R-d}{Ru-Rd} &< d && (\text{Definition of } q)\\
@@ -93,11 +98,14 @@ $$
 \Leftrightarrow \frac{1}{d} &> R\\
 \Leftrightarrow R &< u && (u=1/d)\\
 \end{align*}
-$$
+\)
+```
 
 which is true because of our no-arbitrage assumption that $d<R<u$. So, plugging in the result that $\frac{q}{R}<d$ into (2), we get that
 
-$$\frac{1}{R}\cdot q(Su-K) < d(Su-K)=S-Kd \tag{3}$$
+```math
+\(\frac{1}{R}\cdot q(Su-K) < d(Su-K)=S-Kd \tag{3}\)
+```
 
 where that last step uses the fact $ud=1$. Since $d < 1$, we have that $S-Kd>S-K=g(S)$. So, in this case, we have that $\frac{1}{R}\left(q\cdot g(Su)+(1-q)\cdot g(Sd)\right) > g(S)$ meaning that exercising early isn't optimal in this case.
 
@@ -105,7 +113,9 @@ where that last step uses the fact $ud=1$. Since $d < 1$, we have that $S-Kd>S-K
 
 In this case, $g(S)=0$, so the comparison is trivial:
 
-$$\frac{1}{R}\left(q\cdot g(Su)+(1-q)\cdot g(Sd)\right)=\frac{q}{R}(Su-K)>0=g(S)\tag{4}$$
+```math
+\(\frac{1}{R}\left(q\cdot g(Su)+(1-q)\cdot g(Sd)\right)=\frac{q}{R}(Su-K)>0=g(S)\tag{4}\)
+```
 
 So, in this case, early exercising is not optimal.
 
