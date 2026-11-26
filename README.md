@@ -1,15 +1,8 @@
-# Binomial_Tree_Options_Pricer
-<!-- WRITE OUT THE OVERVIEW MORE!!!!!!!!!!!!!!!!! A discrete-time model that calculates the fair price of an option using risk-neutral valuation. 
+# Binomial Tree Options Pricer
 
-## What an option is
-    european vs american
-    call vs put
-    payoff vs profit
-    moneyness
+This project features a discrete tree model to price options using risk-neutral valuation. This discrete model converges to the option price given by the Black-Scholes partial differential equation, as the tree gets finer. It also shows the calculation of "The Greeks" which show how an option's price can be sensitive to different parameters, giving intuition to the underlying dynamics of option pricing.
 
-<<<<<<< Updated upstream
-## Basic principles on pricing options and (financial) assumptions
-=======
+
 ## What is an option?
 
 An option is a contract where it gives the holder the right but not obligation to buy or sell a particular number (usually 100) of a particular underlying asset (usually a stock) at a pre-determined price known as the strike price. A typical option contract has the relevant underlying asset, time until maturity (time until contract expiration), strike price, and the price of the contract also known as the premium.
@@ -27,7 +20,6 @@ insert figures of profit charts for call/put in long/short  positions
 Now the big question is, how should an option's premium be determined? 
 
 <!--## Basic principles on pricing options and market assumptions
->>>>>>> Stashed changes
     time-value of money
     we assume risk-free rate is known and constant
     assume frictionless trading
