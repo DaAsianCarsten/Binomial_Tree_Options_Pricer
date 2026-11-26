@@ -7,7 +7,27 @@
     payoff vs profit
     moneyness
 
+<<<<<<< Updated upstream
 ## Basic principles on pricing options and (financial) assumptions
+=======
+## What is an option?
+
+An option is a contract where it gives the holder the right but not obligation to buy or sell a particular number (usually 100) of a particular underlying asset (usually a stock) at a pre-determined price known as the strike price. A typical option contract has the relevant underlying asset, time until maturity (time until contract expiration), strike price, and the price of the contract also known as the premium.
+
+An option can be one of two types: a call option or a put option. Call options gives the right but not obligation to the holder to buy a certain number of stocks at the strike, while put options gives the right but not obligation to the holder to sell a number of stocks at the strike. An option can be one of two styles: a European-style contract or an American-style contract. European-style options only allows the holder to exercise their right to buy/sell the underlying at the maturity date, while American-style options also allows their holder to exercise their right anytime before the maturity date.
+
+For a given option, define $K$ to be the strike price and $S$ to be the current price of the underlying asset. Then, the call payoff is $\max(S-K,0)$ (if exercised now) since you'll only exercise a call contract when $S>K$ (buy at the strike and sell at market price) and get the difference $S-K$, otherwise just don't exercise the contract. The put payoff is $\max(K-S,0)$ for similar reasoning. When an option has a positive payoff, we say that the option is "in-the-money" (ITM). When the strike price is exactly equal to the asset price $(S=K)$, we say that the option is "at-the-money" (ATM). Lastly, we say that an option is "out-of-the-money" (OTM) when $S<K$ for call options and when $S>K$ for put options, and the option yields zero payoff in this case as well. 
+
+In both payoff functions, we see that it is always nonnegative, so it seems like there is no down-side in holding an option contract, but that is of course not the case, because you are buying the contract from someone who will then take the short position. Since the transaction between buyer and seller of the contract is a zero-sum game, when the holder can have potential unlimited profit, the seller will then have to bear the potential unlimited loss, which is why these option contracts are not free, and the buyer of the contract will have to pay the seller the option premium. Thus, the net profit (in the buyer's perspective) is $\max(S-K,0)-C$ for call options with premium $C$, and $\max(K-S,0)-P$ for put options with premium $P$. 
+
+<!-- 
+insert figures of profit charts for call/put in long/short  positions
+-->
+
+Now the big question is, how should an option's premium be determined? 
+
+<!--## Basic principles on pricing options and market assumptions
+>>>>>>> Stashed changes
     time-value of money
     we assume risk-free rate is known and constant
     assume frictionless trading
